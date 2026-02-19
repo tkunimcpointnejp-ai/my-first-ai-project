@@ -21,3 +21,22 @@ source .venv/bin/activate
 pip install -r requirements.txt
 streamlit run app.py
 ```
+
+### デプロイ（Docker）
+1. イメージをビルド:
+```bash
+docker build -t my-first-ai-project:latest .
+```
+2. コンテナを起動:
+```bash
+docker run -p 8501:8501 my-first-ai-project:latest
+```
+
+### デプロイ（Streamlit Community Cloud）
+1. GitHub にプッシュします。
+2. Streamlit Community Cloud にリポジトリを接続します。
+3. ビルドコマンドは通常不要です。`requirements.txt` を参照してインストールされます。
+
+#### 注意
+- PaaS（例: Heroku）へデプロイする場合は `Procfile` を利用してください。
+- セキュリティ上の理由から、APIキー等の機密情報は環境変数で管理してください。
