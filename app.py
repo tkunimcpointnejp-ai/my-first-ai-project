@@ -113,7 +113,7 @@ def fetch_daily_temperatures(base_url: str, lat: float, lon: float, start: date,
         "longitude": lon,
         "start_date": start.isoformat(),
         "end_date": end.isoformat(),
-        "daily": "temperature_2m_max,temperature_2m_min",
+        "daily": "temperature_2m_max,temperature_2m_min,relative_humidity_2m_max",
         "timezone": "auto",
     }
     response = requests.get(base_url, params=params, timeout=15)
@@ -123,9 +123,10 @@ def fetch_daily_temperatures(base_url: str, lat: float, lon: float, start: date,
     times = data.get("time") or []
     max_temps = data.get("temperature_2m_max") or []
     min_temps = data.get("temperature_2m_min") or []
+    humidity = data.get("relative_humidity_2m_max") or []
     return [
-        {"date": t, "max_temp": max_temp, "min_temp": min_temp}
-        for t, max_temp, min_temp in zip(times, max_temps, min_temps)
+        {"date": t, "max_temp": max_temp, "min_temp": min_temp, "humidity": h}
+        for t, max_temp, min_temp, h in zip(times, max_temps, min_temps, humidity)
     ]
 
 
@@ -155,8 +156,9 @@ def build_sample_temperatures(lat: float, start: date, end: date) -> list[dict]:
         weekly = 1.8 * math.sin((2 * math.pi * i) / 7)
         max_temp = round(seasonal + lat_adjust + 4.0 + weekly, 1)
         min_temp = round(seasonal + lat_adjust - 4.0 + weekly * 0.8, 1)
+        humidity = round(50 + 20 * math.sin((2 * math.pi * i) / 7), 1)
         rows.append(
-            {"date": current.isoformat(), "max_temp": max_temp, "min_temp": min_temp}
+            {"date": current.isoformat(), "max_temp": max_temp, "min_temp": min_temp, "humidity": humidity}
         )
     return rows
 
@@ -202,15 +204,16 @@ if submitted:
                 st.error("データ取得状態: サンプルデータ表示中（API接続失敗）")
             else:
                 st.success("データ取得状態: API取得成功（実測/予報データ）")
-            st.info(f"{prefecture} の気温を表示しています。データ元: {data_source}")
+            st.info(f"{prefecture} の気温と湿度を表示しています。データ元: {data_source}")
             df = pd.DataFrame(rows)
-            st.line_chart(df, x="date", y=["max_temp", "min_temp"])
+            st.line_chart(df, x="date", y=["max_temp", "min_temp", "humidity"])
             st.dataframe(
                 df.rename(
                     columns={
                         "date": "日付",
                         "max_temp": "最高気温(℃)",
                         "min_temp": "最低気温(℃)",
+                        "humidity": "湿度(%)",
                     }
                 ),
                 use_container_width=True,
